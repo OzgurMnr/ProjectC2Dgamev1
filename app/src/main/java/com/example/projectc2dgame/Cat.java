@@ -1,7 +1,7 @@
 package com.example.projectc2dgame;
 
 import android.graphics.Bitmap;
-
+//a
 public class Cat {
     public int x, y;
     public int jumpHeight;
