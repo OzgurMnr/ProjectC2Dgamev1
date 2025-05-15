@@ -94,7 +94,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     public void update() {
         long currentTime = System.currentTimeMillis();
 
-        // animasyon karesini değiştirrrr
+        // animasyon karesini değiştirrrrr
 
         if(isJumping||isFalling){
             if (currentTime > lastFrameChangeTime + cat1.frameDelay) {
