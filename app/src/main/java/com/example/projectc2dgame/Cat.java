@@ -6,7 +6,10 @@ import android.graphics.Rect;
 import android.view.MotionEvent;
 
 public class Cat {
-    public int x, y;
+
+    public int initialCatX;
+    public int initialCatY;
+
     public int jumpHeight;
     public int jumpSpeed;
     public int jumpProgress = 0;
@@ -28,14 +31,14 @@ public class Cat {
     public long lastFrameChangeTime = 0;
     private float touchStartY = 0;
     public int location=0;
+    public boolean isReversed;
 
-    public Cat(int x, int y,
+    public Cat(int initialCatX, int initialCatY,
                Bitmap runSpriteSheet, Bitmap jumpSpriteSheet,
                int runFrameCount, int jumpFrameCount,
-               int jumpSpeed, int jumpHeight, int frameDelay) {
+               int jumpSpeed, int jumpHeight, int frameDelay,boolean isReversed) {
 
-        this.x = x;
-        this.y = y;
+
 
         this.runSpriteSheet = runSpriteSheet;
         this.jumpSpriteSheet = jumpSpriteSheet;
@@ -52,22 +55,35 @@ public class Cat {
         this.jumpSpeed = jumpSpeed;
         this.jumpHeight = jumpHeight;
         this.frameDelay = frameDelay;
+
+        this.isReversed=isReversed;
+        this.initialCatX=initialCatX;
+        this.initialCatY=initialCatY;
+
     }
 
     public void update(long currentTime) {
         // Koşma animasyonu zamanlaması
-        if (currentTime > lastFrameChangeTime + frameDelay) {
-            currentRunFrame = (currentRunFrame + 1) % runFrameCount;
-            lastFrameChangeTime = currentTime;
+        if(isReversed){
+            if (currentTime > lastFrameChangeTime + frameDelay) {
+                currentRunFrame = (currentRunFrame + 1) % runFrameCount;
+                lastFrameChangeTime = currentTime;
+            }
+        } else if (!isReversed) {
+            if (currentTime > lastFrameChangeTime + frameDelay) {
+                currentRunFrame = (currentRunFrame - 1 + runFrameCount) % runFrameCount;
+                lastFrameChangeTime = currentTime;
+            }
         }
+
 
         // Jump-through hareketi (örnek: çift hat zıplama)
         if (isJumpingThrough) {
             if (jumpThroughProgress < jumpHeight) {
-                y -= jumpSpeed;
+                initialCatY -= jumpSpeed;
                 jumpThroughProgress += jumpSpeed;
             } else if (jumpThroughProgress < jumpHeight * 2) {
-                y += jumpSpeed;
+                initialCatY += jumpSpeed;
                 jumpThroughProgress += jumpSpeed;
             } else {
                 isJumpingThrough = false;
@@ -75,10 +91,11 @@ public class Cat {
             }
         }
 
+
         // Normal zıplama
         if (isJumping) {
             if (jumpProgress < jumpHeight) {
-                y -= jumpSpeed;
+                initialCatY -= jumpSpeed;
                 jumpProgress += jumpSpeed;
             } else {
                 isJumping = false;
@@ -89,7 +106,7 @@ public class Cat {
         // Düşme
         else if (isFalling) {
             if (jumpProgress < jumpHeight) {
-                y += jumpSpeed;
+                initialCatY += jumpSpeed;
                 jumpProgress += jumpSpeed;
             } else {
                 isFalling = false;
@@ -99,20 +116,22 @@ public class Cat {
         }
     }
 
+
     public void draw(Canvas canvas) {
         if (isJumping || isFalling || isJumpingThrough) {
             // Zıplama (tek kare)
             Rect src = new Rect(0, 0, jumpFrameWidth, jumpFrameHeight);
-            Rect dst = new Rect(x, y, x + jumpFrameWidth * 3, y + jumpFrameHeight * 3);
+            Rect dst = new Rect(initialCatX, initialCatY, initialCatX + jumpFrameWidth * 3, initialCatY + jumpFrameHeight * 3);
             canvas.drawBitmap(jumpSpriteSheet, src, dst, null);
         } else {
             // Koşma animasyonu
             Rect src = new Rect(currentRunFrame * runFrameWidth, 0,
                     (currentRunFrame + 1) * runFrameWidth, runFrameHeight);
-            Rect dst = new Rect(x, y, x + runFrameWidth * 3, y + runFrameHeight * 3);
+            Rect dst = new Rect(initialCatX, initialCatY, initialCatX + runFrameWidth * 3, initialCatY + runFrameHeight * 3);
             canvas.drawBitmap(runSpriteSheet, src, dst, null);
         }
     }
+
 
 
     public boolean handleTouch(MotionEvent event) {
@@ -139,6 +158,12 @@ public class Cat {
             isJumpingThrough = true;
             jumpThroughProgress = 0;
         }
+    }
+// Çarpışma için
+Rect dst = new Rect(initialCatX, initialCatY, initialCatX + runFrameWidth * 3, initialCatY + runFrameHeight * 3);
+
+    public Rect getRect() {
+        return new Rect(initialCatX, initialCatY, initialCatX + runFrameWidth * 3, initialCatY + runFrameHeight * 3);
     }
 
 }

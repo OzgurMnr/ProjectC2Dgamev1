@@ -1,4 +1,3 @@
-
 package com.example.projectc2dgame;
 
 import android.content.Context;
@@ -6,56 +5,65 @@ import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.Rect;
 
 public class Obstacle {
-    private Bitmap sharedBitmap; // Engel resmi
-    private int x, y;      // Engel pozisyonu
-    private int speed = 10; // Engel sola doğru ne kadar hızlı gidecek
-
+    private Bitmap bitmap;   // Engel resmi
+    private int x, y;        // Engel pozisyonu
+    private int speed = -10;  // Engelin hareket hızı (sola doğru hareket için negatif olmalı)
 
     public Obstacle(Context context, int screenHeight) {
-        // Engel görseli, drawable klasöründeki bir resim (obstacle.png gibi)
-        sharedBitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.obstacle);
-        sharedBitmap = Bitmap.createScaledBitmap(sharedBitmap, 200, 200, true);
+        // Engel görselini yükle ve ölçeklendir
+        bitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.obstacle);
+        bitmap = Bitmap.createScaledBitmap(bitmap, 150, 150, true);
+
         // Engel ekranın sağından başlar
         x = (Resources.getSystem().getDisplayMetrics().widthPixels)/2;
 
-        // Engel ekranın alt kısmında yer alır
-        y = screenHeight - sharedBitmap.getHeight();
-        int lane2 = (int) (Math.random() * 3); // 0-3 arası rastgele seç
-        // Hat (lane2) 0 = üst, 1 = orta, 2 = alt, default= alt
-        double margin =(int) (screenHeight/30.0);
-        switch (lane2) {
+        // Engel için rastgele hat seçimi ve y konumu belirle
+        int lane = (int) (Math.random() * 3);
+        double margin = screenHeight / 30.0;
+
+        switch (lane) {
             case 0:
-                y = (int) margin;
+                y = (int) margin; // üst hat
                 break;
             case 1:
-                y = (int) ((screenHeight - sharedBitmap.getHeight()) / 2.0);
+                y = (int) ((screenHeight - bitmap.getHeight()) / 2.0); // orta hat
                 break;
             case 2:
             default:
-                y = (int) (screenHeight - sharedBitmap.getHeight() - margin);
+                y = (int) (screenHeight - bitmap.getHeight() - margin); // alt hat
                 break;
         }
     }
 
-    // Engel konumunu güncelle (her frame'de sola doğru hareket ettir)
+    // Engel sola doğru hareket eder
     public void update() {
-        x += speed;
+        x += speed;  // sola hareket için hız negatif olmalı
     }
 
-    // Ekrana engeli çizer
+    // Engeli ekrana çiz
     public void draw(Canvas canvas) {
-        canvas.drawBitmap(sharedBitmap, x, y, null);
+        canvas.drawBitmap(bitmap, x, y, null);
     }
 
-    // Getter metodları
+    // Engel pozisyonu için getter
     public int getX() {
         return x;
     }
 
     public int getWidth() {
-        return sharedBitmap.getWidth();
+        return bitmap.getWidth();
+    }
+
+    // Çarpışma için engelin dikdörtgen alanı
+    public Rect getRect() {
+        return new Rect(x, y, x + bitmap.getWidth(), y + bitmap.getHeight());
+    }
+
+    // Kedi ile çarpışma kontrolü yap
+    public boolean checkCollision(Cat cat) {
+        return Rect.intersects(this.getRect(), cat.getRect());
     }
 }
-
