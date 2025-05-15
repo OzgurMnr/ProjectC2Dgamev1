@@ -1,18 +1,18 @@
 package com.example.projectc2dgame;
 
-import com.example.projectc2dgame.R;;
 
+//en günceli
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.Rect;
+
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.GestureDetector;
-import android.view.GestureDetector.SimpleOnGestureListener;
+
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -25,12 +25,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
 
 
-    private float touchStartY = 0;
-    private boolean isJumping = false;
 
-    private int jumpProgress = 0;
-    private boolean isFalling=false;
-    private int location=0;
 
 
     //CatSprite
@@ -39,16 +34,10 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     private Bitmap cat_runspriteSheet2;
     private int catframeWidth, catframeHeight; // Her bir animasyon karesinin genişliği ve yüksekliği
     private int jumpframeWidth, jumpframeHeight;
-    private int currentFrame = 0; // O anda görüntülenen kare indeksi
+
     private int catframeCount = 8; // Toplam animasyon karesi sayısı
     private int jumpframeCount = 8;
-    private long lastFrameChangeTime = 0; // Son kare değişim zamanı (ms cinsinden)
-    //jumnptroughline
-    private boolean jumptroughline = false;
-    private boolean isJumpingThrough = false;
-    private int jumpThroughHeight = 240;
-    private int jumpThroughProgress = 0;
-    private int jumpThroughSpeed = 30;
+
 
 
     private GestureDetector gestureDetector;
@@ -64,6 +53,9 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     private int obstacleSpawnDelay3 = 2000; // Obstacle için zamanlayıcı
     private int obstacleSpawnDelay4 = 3000; // Obstacle2 için zamanlayıcı
     private Cat cat1, cat2;
+
+    private long currentTime;
+    public boolean location1check=false;
 
 
     public GameView(Context context) {
@@ -89,71 +81,18 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         int initialCat2X = ((getWidth() - catframeWidth) / 2) - 1125;
         int initialCat2Y = ((getHeight() - catframeHeight) / 2) - 180;
 
-        cat1 = new Cat(initialCat1X, initialCat1Y, cat_runspriteSheet, jump_spriteSheet, catframeCount, jumpframeCount,40,320,40);
-        cat2 = new Cat(initialCat2X, initialCat2Y, cat_runspriteSheet, jump_spriteSheet, catframeCount, jumpframeCount,40,320,40);
+        cat1 = new Cat(initialCat1X, initialCat1Y, cat_runspriteSheet, jump_spriteSheet, catframeCount, jumpframeCount,40,280,40);
+        cat2 = new Cat(initialCat2X, initialCat2Y, cat_runspriteSheet, jump_spriteSheet, catframeCount, jumpframeCount,40,280,40);
         thread.setRunning(true);
         thread.start();
+
+
     }
 
     public void update() {
-        long currentTime = System.currentTimeMillis();
-
-        if (currentTime > lastFrameChangeTime + cat1.frameDelay) {
-            // cat1 frame artan sırayla
-            currentFrameCat1 = (currentFrameCat1 + 1) % catframeCount;
-
-            // cat2 frame azalan sırayla
-            currentFrameCat2--;
-            if (currentFrameCat2 < 0) {
-                currentFrameCat2 = catframeCount - 1;
-            }
-
-            lastFrameChangeTime = currentTime;
-        }
-
-
-
-        // zıplama hareketi
-        if (isJumpingThrough) {
-            if (cat1.jumpThroughProgress < jumpThroughHeight) {
-                cat1.y -= jumpThroughSpeed;
-                cat2.y -= jumpThroughSpeed;
-                cat1.jumpThroughProgress += jumpThroughSpeed;
-                cat2.jumpThroughProgress += jumpThroughSpeed;
-            } else if (cat1.jumpThroughProgress < jumpThroughHeight * 2) {
-                cat1.y += jumpThroughSpeed;
-                cat2.y += jumpThroughSpeed;
-                cat1.jumpThroughProgress += jumpThroughSpeed;
-                cat2.jumpThroughProgress += jumpThroughSpeed;
-            } else {
-                isJumpingThrough = false;
-                jumptroughline = false;
-                cat1.jumpThroughProgress = 0;
-                cat2.jumpThroughProgress = 0;
-            }
-        }
-        // Zıplama veya düşme hareketi
-        if (isJumping) {
-            if (jumpProgress < cat1.jumpHeight) {
-                cat1.y -= cat1.jumpSpeed;
-                cat2.y -= cat1.jumpSpeed;
-                jumpProgress += cat1.jumpSpeed;
-            } else {
-                isJumping = false;
-                jumpProgress = 0;
-                location++;
-            }
-        } else if (isFalling) {
-            if (jumpProgress < cat1.jumpHeight) {
-                cat1.y += cat1.jumpSpeed;
-                cat2.y += cat1.jumpSpeed;
-                jumpProgress += cat1.jumpSpeed;
-            } else {
-                isFalling = false;
-                jumpProgress = 0;
-                location--;
-            }
-        }
+        currentTime = System.currentTimeMillis();
+        cat1.update(currentTime);
+        cat2.update(currentTime);
 
 
 
@@ -171,6 +110,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
         // Mevcut engelleri güncelle
         Iterator<Obstacle> iterator = obstacles.iterator();
+
         while (iterator.hasNext()) {
             Obstacle obstacle = iterator.next();
             obstacle.update();
@@ -190,44 +130,19 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         }
     }
 
+
     @Override
     public void draw(Canvas canvas) {
         super.draw(canvas);
-        canvas.drawColor(Color.WHITE);
-        if (isJumping || isFalling) {
-            currentFrameCat1 = 0;
-            Rect src1 = new Rect(currentFrameCat1 * cat1.jumpFrameWidth, 0,
-                    (currentFrameCat1 + 1) * cat1.jumpFrameWidth, cat1.jumpFrameHeight);
-            Rect dst1 = new Rect(cat1.x, cat1.y,
-                    cat1.x + cat1.jumpFrameWidth * 3, cat1.y + cat1.jumpFrameHeight * 3);
-            canvas.drawBitmap(cat1.jumpSpriteSheet, src1, dst1, null);
 
-            currentFrameCat2 = 0;
-            Rect src2 = new Rect(currentFrameCat2 * cat2.jumpFrameWidth, 0,
-                    (currentFrameCat2 + 1) * cat2.jumpFrameWidth, cat2.jumpFrameHeight);
-            Rect dst2 = new Rect(cat2.x, cat2.y,
-                    cat2.x + cat2.jumpFrameWidth * 3, cat2.y + cat2.jumpFrameHeight * 3);
-            canvas.drawBitmap(cat2.jumpSpriteSheet, src2, dst2, null);
+        if (canvas != null) {
+            canvas.drawColor(Color.WHITE);
 
-        } else {
-            Rect src1 = new Rect(currentFrameCat1 * cat1.runFrameWidth, 0,
-                    (currentFrameCat1 + 1) * cat1.runFrameWidth, cat1.runFrameHeight);
-            Rect dst1 = new Rect(cat1.x, cat1.y,
-                    cat1.x + cat1.runFrameWidth * 3, cat1.y + cat1.runFrameHeight * 3);
-            canvas.drawBitmap(cat1.runSpriteSheet, src1, dst1, null);
+            cat1.draw(canvas);
+            cat2.draw(canvas);
 
-            Rect src2 = new Rect(currentFrameCat2 * cat2.runFrameWidth, 0,
-                    (currentFrameCat2 + 1) * cat2.runFrameWidth, cat2.runFrameHeight);
-            Rect dst2 = new Rect(cat2.x, cat2.y,
-                    cat2.x + cat2.runFrameWidth * 3, cat2.y + cat2.runFrameHeight * 3);
-            canvas.drawBitmap(cat_runspriteSheet2, src2, dst2, null);
+
         }
-
-
-
-
-
-
 
         // Tüm engelleri çiz
         for (Obstacle obstacle : obstacles) {
@@ -240,31 +155,35 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
     }
 
+
+
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        gestureDetector.onTouchEvent(event);
-        switch (event.getAction()) {
-            case MotionEvent.ACTION_DOWN:
-                touchStartY = event.getY(); // dokunmanın başladığı y
+        boolean gestureHandled = gestureDetector.onTouchEvent(event);
+        boolean catHandled = false; // dokunma işlenme durumu için değişken
 
-                return true;
+        float x = event.getX();
+        int width = getWidth();
 
-            case MotionEvent.ACTION_UP:
-                float endY = event.getY();
-                if (touchStartY - endY > 100 && !isJumping && (location==0 || location == -1)  ) { // yukarı doğru kaydırıldıysa ve zıplamıyorsa
-                    isJumping = true;
+        if (x > width / 2) {
+            // Sol yarı - cat1 için dokunma işle
+            catHandled = cat1.handleTouch(event);
 
 
-                }
-                else if (endY-touchStartY > 100 && !isFalling && (location==0 || location ==1)) {
-                    isFalling = true;
-                    
-                }
-
-                return true;
+        } else {
+            // Sağ yarı - cat2 için dokunma işle
+            catHandled = cat2.handleTouch(event);
         }
+
+        // Eğer gestureDetector veya herhangi bir cat touch event'i işlediyse true döndür
+        if (gestureHandled || catHandled) {
+            return true;
+        }
+
         return super.onTouchEvent(event);
     }
+
+
 
 
 
@@ -277,15 +196,17 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     private class GestureListener extends GestureDetector.SimpleOnGestureListener {
         @Override
         public boolean onDoubleTap(MotionEvent e) {
+            float x = e.getX();
+            int width = getWidth();
 
-
-            isJumpingThrough=true;
-            jumptroughline=true;
-
+            if (x > width / 2) {
+                // Sol yarı - cat1 için çift dokunma
+                cat1.handleDoubleTap();
+            } else {
+                // Sağ yarı - cat2 için çift dokunma
+                cat2.handleDoubleTap();
+            }
             return true;
         }
     }
 }
-
-
-
