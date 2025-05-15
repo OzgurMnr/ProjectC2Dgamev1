@@ -36,6 +36,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     //CatSprite
     private Bitmap cat_runspriteSheet; // Karakterin tüm animasyon karelerini içeren sprite sheet
     private Bitmap  jump_spriteSheet;
+    private Bitmap cat_runspriteSheet2;
     private int catframeWidth, catframeHeight; // Her bir animasyon karesinin genişliği ve yüksekliği
     private int jumpframeWidth, jumpframeHeight;
     private int currentFrame = 0; // O anda görüntülenen kare indeksi
@@ -51,6 +52,8 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
 
     private GestureDetector gestureDetector;
+    private int currentFrameCat1 = 0;  // cat1 için animasyon frame indeksi
+    private int currentFrameCat2 = catframeCount - 1; // cat2 için ters sırada, başta 7
 
     private List<Obstacle> obstacles = new ArrayList<>();
     private List<Obstacle2> obstacles2 = new ArrayList<>();
@@ -69,6 +72,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         gestureDetector = new GestureDetector(context, new GestureListener());
         cat_runspriteSheet = BitmapFactory.decodeResource(getResources(), R.drawable.cat_sprite);
         jump_spriteSheet = BitmapFactory.decodeResource(getResources(), R.drawable.jump_sprite);
+        cat_runspriteSheet2= BitmapFactory.decodeResource(getResources(), R.drawable.catrunmirror);
         catframeWidth = cat_runspriteSheet.getWidth()/ catframeCount ;
         catframeHeight = cat_runspriteSheet.getHeight();
         jumpframeWidth = jump_spriteSheet.getWidth()/8;
@@ -94,19 +98,17 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     public void update() {
         long currentTime = System.currentTimeMillis();
 
-        // animasyon karesini değiştirrrrrR
+        if (currentTime > lastFrameChangeTime + cat1.frameDelay) {
+            // cat1 frame artan sırayla
+            currentFrameCat1 = (currentFrameCat1 + 1) % catframeCount;
 
-        if(isJumping||isFalling){
-            if (currentTime > lastFrameChangeTime + cat1.frameDelay) {
-                currentFrame = (currentFrame + 1) % catframeCount;
-                lastFrameChangeTime = currentTime;
+            // cat2 frame azalan sırayla
+            currentFrameCat2--;
+            if (currentFrameCat2 < 0) {
+                currentFrameCat2 = catframeCount - 1;
             }
-        }
-        else{
-            if (currentTime > lastFrameChangeTime + cat1.frameDelay) {
-                currentFrame = (currentFrame + 1) % catframeCount;
-                lastFrameChangeTime = currentTime;
-            }
+
+            lastFrameChangeTime = currentTime;
         }
 
 
@@ -193,32 +195,32 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         super.draw(canvas);
         canvas.drawColor(Color.WHITE);
         if (isJumping || isFalling) {
-            currentFrame=0;
-            Rect src1 = new Rect(currentFrame * cat1.jumpFrameWidth, 0,
-                    (currentFrame + 1) * cat1.jumpFrameWidth, cat1.jumpFrameHeight);
+            currentFrameCat1 = 0;
+            Rect src1 = new Rect(currentFrameCat1 * cat1.jumpFrameWidth, 0,
+                    (currentFrameCat1 + 1) * cat1.jumpFrameWidth, cat1.jumpFrameHeight);
             Rect dst1 = new Rect(cat1.x, cat1.y,
                     cat1.x + cat1.jumpFrameWidth * 3, cat1.y + cat1.jumpFrameHeight * 3);
             canvas.drawBitmap(cat1.jumpSpriteSheet, src1, dst1, null);
-        } else {
-            Rect src1 = new Rect(currentFrame * cat1.runFrameWidth, 0,
-                    (currentFrame + 1) * cat1.runFrameWidth, cat1.runFrameHeight);
-            Rect dst1 = new Rect(cat1.x, cat1.y,
-                    cat1.x + cat1.runFrameWidth * 3, cat1.y + cat1.runFrameHeight * 3);
-            canvas.drawBitmap(cat1.runSpriteSheet, src1, dst1, null);
-        }
-        if (isJumping || isFalling) {
-            currentFrame = 0;
-            Rect src2 = new Rect(currentFrame * cat2.jumpFrameWidth, 0,
-                    (currentFrame + 1) * cat2.jumpFrameWidth, cat2.jumpFrameHeight);
+
+            currentFrameCat2 = 0;
+            Rect src2 = new Rect(currentFrameCat2 * cat2.jumpFrameWidth, 0,
+                    (currentFrameCat2 + 1) * cat2.jumpFrameWidth, cat2.jumpFrameHeight);
             Rect dst2 = new Rect(cat2.x, cat2.y,
                     cat2.x + cat2.jumpFrameWidth * 3, cat2.y + cat2.jumpFrameHeight * 3);
             canvas.drawBitmap(cat2.jumpSpriteSheet, src2, dst2, null);
+
         } else {
-            Rect src2 = new Rect(currentFrame * cat2.runFrameWidth, 0,
-                    (currentFrame + 1) * cat2.runFrameWidth, cat2.runFrameHeight);
+            Rect src1 = new Rect(currentFrameCat1 * cat1.runFrameWidth, 0,
+                    (currentFrameCat1 + 1) * cat1.runFrameWidth, cat1.runFrameHeight);
+            Rect dst1 = new Rect(cat1.x, cat1.y,
+                    cat1.x + cat1.runFrameWidth * 3, cat1.y + cat1.runFrameHeight * 3);
+            canvas.drawBitmap(cat1.runSpriteSheet, src1, dst1, null);
+
+            Rect src2 = new Rect(currentFrameCat2 * cat2.runFrameWidth, 0,
+                    (currentFrameCat2 + 1) * cat2.runFrameWidth, cat2.runFrameHeight);
             Rect dst2 = new Rect(cat2.x, cat2.y,
                     cat2.x + cat2.runFrameWidth * 3, cat2.y + cat2.runFrameHeight * 3);
-            canvas.drawBitmap(cat2.runSpriteSheet, src2, dst2, null);
+            canvas.drawBitmap(cat_runspriteSheet2, src2, dst2, null);
         }
 
 
@@ -244,6 +246,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 touchStartY = event.getY(); // dokunmanın başladığı y
+
                 return true;
 
             case MotionEvent.ACTION_UP:
