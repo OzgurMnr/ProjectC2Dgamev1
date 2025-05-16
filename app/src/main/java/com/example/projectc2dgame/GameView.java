@@ -1,6 +1,7 @@
 package com.example.projectc2dgame;
 
 import android.content.Context;
+
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -10,18 +11,18 @@ import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.GestureDetector;
+import android.app.Activity;
+import android.util.DisplayMetrics;
 
 public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     private GameThread thread; // Oyun döngüsünü yönetecek thread
 
 
 
-    private int catframeCount = 8; // Toplam animasyon karesi sayısı
-    private int jumpframeCount = 8;
+
 
     private GestureDetector gestureDetector;
-    private int currentFrameCat1 = 0;  // cat1 için animasyon frame indeksi
-    private int currentFrameCat2 = catframeCount - 1; // cat2 için ters sırada, başta 7
+
 
     private ObstacleManager obstacleManager;
 
@@ -29,9 +30,9 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
     private long currentTime;
 
-    // Can sayıları
-    private int cat1Lives = 3;
-    private int cat2Lives = 3;
+
+    private Bitmap bgImage;
+
 
     // Çarpışma sonrası kısa dokunulmazlık süresi için zaman tutucu
     private long cat1LastHitTime = 0;
@@ -40,6 +41,18 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
     public GameView(Context context) {
         super(context);
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        ((Activity) context).getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+        int screenWidth = displayMetrics.widthPixels;
+        int screenHeight = displayMetrics.heightPixels;
+
+// bg_1 resmini ekran boyutuna göre ölçekle ve yükle
+        bgImage = Bitmap.createScaledBitmap(
+                BitmapFactory.decodeResource(getResources(), R.drawable.bg_1),
+                screenWidth,
+                screenHeight,
+                true
+        );
         getHolder().addCallback(this);
         gestureDetector = new GestureDetector(context, new GestureListener());
 
@@ -50,9 +63,21 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
-        cat1 = new Cat((getWidth() - 80) - 665, ((getHeight()/2)) - 305, BitmapFactory.decodeResource(getResources(), R.drawable.cat_sprite), BitmapFactory.decodeResource(getResources(), R.drawable.jump_sprite), catframeCount, jumpframeCount,40,280,40,true);
-        cat2 = new Cat(5, ((getHeight()/2)) - 305, BitmapFactory.decodeResource(getResources(), R.drawable.cat_mirror_sprite), BitmapFactory.decodeResource(getResources(), R.drawable.jump_sprite), catframeCount, jumpframeCount,40,280,40,false);
+        cat1 = new Cat(getWidth(), getHeight(),
+                BitmapFactory.decodeResource(getResources(), R.drawable.cat_sprite),
+                BitmapFactory.decodeResource(getResources(), R.drawable.jump_sprite),
+                BitmapFactory.decodeResource(getResources(), R.drawable.sleep_sprite),
+                BitmapFactory.decodeResource(getResources(), R.drawable.scare_sprite),
+                8, 8, 11, 40, 280, 40,
+                true, true, false, true);
 
+        cat2 = new Cat(getWidth(), getHeight(),
+                BitmapFactory.decodeResource(getResources(), R.drawable.cat_mirror_sprite),
+                BitmapFactory.decodeResource(getResources(), R.drawable.jump_mirror_sprite),
+                BitmapFactory.decodeResource(getResources(), R.drawable.sleep_mirror_sprite),
+                BitmapFactory.decodeResource(getResources(), R.drawable.scare_mirror_sprite),
+                8, 8, 11, 40, 280, 40,
+                false, true, false, false);
         obstacleManager = new ObstacleManager(getContext(), getHeight(),getWidth());
 
         thread.setRunning(true);
@@ -64,28 +89,30 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         currentTime = System.currentTimeMillis();
         cat1.update(currentTime);
         cat2.update(currentTime);
-
+    if(!cat1.isGameStart){
         if (obstacleManager != null) {
             obstacleManager.update();
+
 
             // Cat1 çarpışma kontrolü ve can azaltma
             if (obstacleManager.checkCollision(cat1)) {
                 if (currentTime - cat1LastHitTime > INVULNERABILITY_TIME) {
-                    cat1Lives--;
+                    cat1.catLives++;
                     cat1LastHitTime = currentTime;
-                    if (cat1Lives <= 0) {
+                    if (cat1.catLives <= 0) {
                         thread.setRunning(false);
                         // İstersen game over ekranına geçiş veya başka işlemler ekleyebilirsin
                     }
                 }
             }
+        }
 
             // Cat2 çarpışma kontrolü ve can azaltma
             if (obstacleManager.checkCollision(cat2)) {
                 if (currentTime - cat2LastHitTime > INVULNERABILITY_TIME) {
-                    cat2Lives--;
+                    cat2.catLives++;
                     cat2LastHitTime = currentTime;
-                    if (cat2Lives <= 0) {
+                    if (cat2.catLives <= 0) {
                         thread.setRunning(false);
                         // İstersen game over ekranına geçiş veya başka işlemler ekleyebilirsin
                     }
@@ -99,8 +126,10 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         super.draw(canvas);
 
         if (canvas != null) {
-            canvas.drawColor(Color.WHITE);
+            // 1️⃣ Arka plan resmi en başta çizilmeli
+            canvas.drawBitmap(bgImage, 0, 0, null);
 
+            // 2️⃣ Sonra diğer şeyleri çiz
             cat1.draw(canvas);
             cat2.draw(canvas);
 
@@ -108,14 +137,14 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
                 obstacleManager.draw(canvas);
             }
 
-            // Can sayısını ekrana yazdır
+            // 3️⃣ Can sayısını ekrana yaz
             Paint paint = new Paint();
             paint.setColor(Color.RED);
             paint.setTextSize(50);
             paint.setAntiAlias(true);
 
-            canvas.drawText("Cat1 Lives: " + cat1Lives, 50, 100, paint);
-            canvas.drawText("Cat2 Lives: " + cat2Lives, 50, 170, paint);
+            canvas.drawText("Cat1 Lives: " + cat1.catLives, 50, 100, paint);
+            canvas.drawText("Cat2 Lives: " + cat2.catLives, 50, 170, paint);
         }
     }
 
@@ -157,14 +186,19 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         public boolean onDoubleTap(MotionEvent e) {
             float x = e.getX();
             int width = getWidth();
-
-            if (x > width / 2) {
-                // Sağ yarı - cat1 için çift dokunma
+            if(cat1.isGameStart){
                 cat1.handleDoubleTap();
-            } else {
-                // Sol yarı - cat2 için çift dokunma
                 cat2.handleDoubleTap();
+            }else {
+                if (x > width / 2) {
+                    // Sağ yarı - cat1 için çift dokunma
+                    cat1.handleDoubleTap();
+                } else {
+                    // Sol yarı - cat2 için çift dokunma
+                    cat2.handleDoubleTap();
+                }
             }
+
             return true;
         }
     }

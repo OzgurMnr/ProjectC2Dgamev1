@@ -1,5 +1,4 @@
 package com.example.projectc2dgame;
-
 import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
@@ -7,45 +6,34 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Rect;
 
+
+
 public class Obstacle {
     private Bitmap bitmap;   // Engel resmi
     private int x, y;        // Engel pozisyonu
-    private int speed = -10;  // Engelin hareket hızı (sola doğru hareket için negatif olmalı)
+    private int speed = 15;  // Sağ doğru hareket için pozitif hız
 
-    public Obstacle(Context context, int screenHeight) {
+    public Obstacle(Context context, int startY) {
         // Engel görselini yükle ve ölçeklendir
         bitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.obstacle);
         bitmap = Bitmap.createScaledBitmap(bitmap, 150, 150, true);
 
-        // Engel ekranın sağından başlar
-        x = (Resources.getSystem().getDisplayMetrics().widthPixels)/2;
+        // Engel ekranın ortasından başlar
+        x = (Resources.getSystem().getDisplayMetrics().widthPixels) / 2;
 
-        // Engel için rastgele hat seçimi ve y konumu belirle
-        int lane = (int) (Math.random() * 3);
-        double margin = screenHeight / 30.0;
-
-        switch (lane) {
-            case 0:
-                y = (int) margin; // üst hat
-                break;
-            case 1:
-                y = (int) ((screenHeight - bitmap.getHeight()) / 2.0); // orta hat
-                break;
-            case 2:
-            default:
-                y = (int) (screenHeight - bitmap.getHeight() - margin); // alt hat
-                break;
-        }
+        // Y konumu dışarıdan parametre olarak atanır
+        y = startY;
     }
 
-    // Engel sola doğru hareket eder
+    // Engel sağa doğru hareket eder
     public void update() {
-        x += speed;  // sola hareket için hız negatif olmalı
+        x += speed;  // sağa doğru
     }
 
     // Engeli ekrana çiz
     public void draw(Canvas canvas) {
         canvas.drawBitmap(bitmap, x, y, null);
+
     }
 
     // Engel pozisyonu için getter
@@ -57,12 +45,18 @@ public class Obstacle {
         return bitmap.getWidth();
     }
 
-    // Çarpışma için engelin dikdörtgen alanı
+    // Çarpışma için dikdörtgen alan
     public Rect getRect() {
-        return new Rect(x, y, x + bitmap.getWidth(), y + bitmap.getHeight());
+        int padding = 20;
+        return new Rect(
+                x + padding,
+                y + padding,
+                x + bitmap.getWidth() - padding,
+                y + bitmap.getHeight() - padding
+        );
     }
 
-    // Kedi ile çarpışma kontrolü yap
+    // Kedi ile çarpışma kontrolü
     public boolean checkCollision(Cat cat) {
         return Rect.intersects(this.getRect(), cat.getRect());
     }

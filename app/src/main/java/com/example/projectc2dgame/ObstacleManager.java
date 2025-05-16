@@ -23,10 +23,10 @@ public class ObstacleManager {
     private long lastThrowableSpawnTime1;
     private long lastThrowableSpawnTime2;
 
-    private long obstacleSpawnDelay1 = 1000;         // Normal engel 1 -> 2 saniye
-    private long obstacleSpawnDelay2 = 1000;         // Normal engel 2 -> 3 saniye
-    private long throwableSpawnDelay1 = 4000;        // Fırlatılabilir engel 1 -> 4 saniye (daha uzun)
-    private long throwableSpawnDelay2 = 5000;        // Fırlatılabilir engel 2 -> 5 saniye (daha uzun)
+    private final long obstacleSpawnDelay1 = 1000;         // Normal engel 1 -> 2 saniye
+    private final long obstacleSpawnDelay2 = 1000;         // Normal engel 2 -> 3 saniye
+    private final long throwableSpawnDelay1 = 2000;        // Fırlatılabilir engel 1 -> 4 saniye (daha uzun)
+    private final long throwableSpawnDelay2 = 2000;        // Fırlatılabilir engel 2 -> 5 saniye (daha uzun)
 
     public ObstacleManager(Context context, int screenWidth, int screenHeight) {
         this.context = context;
@@ -44,31 +44,52 @@ public class ObstacleManager {
         lastThrowableSpawnTime2 = System.currentTimeMillis();
     }
 
+    private int getLaneY(int screenHeight, int bitmapHeight) {
+        int lane = (int)(Math.random() * 3);
+    int margin = screenHeight / 20;
+
+        if (lane == 0) {
+            return margin;  // üst hat
+        } else if (lane == 1) {
+            return (screenHeight - bitmapHeight) / 2;  // orta hat
+        } else { // lane == 2
+            return screenHeight - bitmapHeight - margin;  // alt hat
+        }
+    }
+
+
+
+
     public void update() {
         long currentTime = System.currentTimeMillis();
 
-        // Normal Obstacle ekle
+        // Obstacle 1
         if (currentTime - lastObstacleSpawnTime1 > obstacleSpawnDelay1) {
-            obstacles.add(new Obstacle(context, screenHeight));
+            int bitmapHeight = 150;  // obstacle bitmap yüksekliği (Obstacle sınıfında 150 olarak ölçekleniyor)
+            int startY = getLaneY(screenHeight, bitmapHeight);
+            obstacles.add(new Obstacle(context, startY));  // constructor parametreyi değiştiriyoruz
             lastObstacleSpawnTime1 = currentTime;
         }
 
+// Obstacle 2
         if (currentTime - lastObstacleSpawnTime2 > obstacleSpawnDelay2) {
-            obstacles2.add(new Obstacle2(context, screenHeight));
+            int bitmapHeight = 150;  // obstacle2 bitmap yüksekliği
+            int startY = getLaneY(screenHeight, bitmapHeight);
+            obstacles2.add(new Obstacle2(context, startY));
             lastObstacleSpawnTime2 = currentTime;
         }
 
-        // ThrowableObstacle ekle (daha seyrek)
+        // ThrowableObstacle
         if (currentTime - lastThrowableSpawnTime1 > throwableSpawnDelay1) {
-            int startX = screenWidth;
-            int startY = (int)(Math.random() * screenHeight);
+            int startX = screenWidth;  // sağdan başlıyor (sola hareket ediyor)
+            int startY = getLaneY(screenHeight, 150); // 100, engel yüksekliği
             throwableObstacles.add(new ThrowableObstacle(context, startX, startY));
             lastThrowableSpawnTime1 = currentTime;
         }
 
         if (currentTime - lastThrowableSpawnTime2 > throwableSpawnDelay2) {
-            int startX2 = screenWidth;
-            int startY2 = (int)(Math.random() * screenHeight);
+            int startX2 = screenWidth;  // sağdan başlıyor (sola hareket ediyor)
+            int startY2 = getLaneY(screenHeight, 150); // 100, engel yüksekliği
             throwableObstacles2.add(new ThrowableObstacle2(context, startX2, startY2));
             lastThrowableSpawnTime2 = currentTime;
         }
@@ -76,8 +97,7 @@ public class ObstacleManager {
 
 
 
-
-    // Normal Obstacle güncelle ve ekrandan çıkarsa kaldır
+        // Normal Obstacle güncelle ve ekrandan çıkarsa kaldır
         Iterator<Obstacle> it1 = obstacles.iterator();
         while (it1.hasNext()) {
             Obstacle obstacle = it1.next();
@@ -117,6 +137,8 @@ public class ObstacleManager {
     }
 
     public void draw(Canvas canvas) {
+        this.screenHeight = canvas.getHeight();  // Gerçek canvas yüksekliğini güncelle
+
         for (Obstacle obstacle : obstacles) {
             obstacle.draw(canvas);
         }
@@ -131,20 +153,52 @@ public class ObstacleManager {
         }
     }
 
+
     // Çarpışma kontrolü (tüm engeller)
     public boolean checkCollision(Cat cat) {
-        for (Obstacle obstacle : obstacles) {
-            if (obstacle.checkCollision(cat)) return true;
+        boolean collided = false;
+
+        // Normal obstacle1
+        Iterator<Obstacle> it1 = obstacles.iterator();
+        while (it1.hasNext()) {
+            Obstacle obstacle = it1.next();
+            if (obstacle.checkCollision(cat)) {
+                it1.remove(); // Çarpışan kutuyu sil
+                collided = true;
+            }
         }
-        for (Obstacle2 obstacle2 : obstacles2) {
-            if (obstacle2.checkCollision(cat)) return true;
+
+        // Normal obstacle2
+        Iterator<Obstacle2> it2 = obstacles2.iterator();
+        while (it2.hasNext()) {
+            Obstacle2 obstacle2 = it2.next();
+            if (obstacle2.checkCollision(cat)) {
+                it2.remove(); // Çarpışan kutuyu sil
+                collided = true;
+            }
         }
-        for (ThrowableObstacle throwable : throwableObstacles) {
-            if (throwable.checkCollision(cat)) return true;
+
+        // ThrowableObstacle
+        Iterator<ThrowableObstacle> it3 = throwableObstacles.iterator();
+        while (it3.hasNext()) {
+            ThrowableObstacle throwable = it3.next();
+            if (throwable.checkCollision(cat)) {
+                it3.remove(); // Çarpışan kutuyu sil
+                collided = true;
+            }
         }
-        for (ThrowableObstacle2 throwable2 : throwableObstacles2) {
-            if (throwable2.checkCollision(cat)) return true;
+
+        // ThrowableObstacle2
+        Iterator<ThrowableObstacle2> it4 = throwableObstacles2.iterator();
+        while (it4.hasNext()) {
+            ThrowableObstacle2 throwable2 = it4.next();
+            if (throwable2.checkCollision(cat)) {
+                it4.remove(); // Çarpışan kutuyu sil
+                collided = true;
+            }
         }
-        return false;
+
+        return collided;
     }
+
 }
