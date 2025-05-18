@@ -16,11 +16,6 @@ import android.util.DisplayMetrics;
 
 public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     private GameThread thread; // Oyun döngüsünü yönetecek thread
-
-
-
-
-
     private GestureDetector gestureDetector;
 
 
@@ -29,10 +24,16 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     private Cat cat1, cat2;
 
     private long currentTime;
+    private Background bg_1;
 
+    private Bitmap bg_Image;
 
-    private Bitmap bgImage;
-
+    private Bitmap heart_1;
+    private Bitmap heart_2;
+    private Bitmap heart_3;
+    // Kalp + yazının toplam genişliğini hesapla (tahmini yazı genişliği: 80px)
+    private int heartX = getWidth() - 180; // Sağdan boşluk
+    private int heartY = 30;
 
     // Çarpışma sonrası kısa dokunulmazlık süresi için zaman tutucu
     private long cat1LastHitTime = 0;
@@ -46,13 +47,24 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         int screenWidth = displayMetrics.widthPixels;
         int screenHeight = displayMetrics.heightPixels;
 
+
 // bg_1 resmini ekran boyutuna göre ölçekle ve yükle
-        bgImage = Bitmap.createScaledBitmap(
+        bg_Image = Bitmap.createScaledBitmap(
                 BitmapFactory.decodeResource(getResources(), R.drawable.bg_1),
                 screenWidth,
                 screenHeight,
                 true
         );
+        heart_1 = BitmapFactory.decodeResource(getResources(), R.drawable.heart_1);
+        heart_1 = Bitmap.createScaledBitmap(heart_1, 96, 64, false);
+
+        heart_2 = BitmapFactory.decodeResource(getResources(), R.drawable.heart_2);
+        heart_2 = Bitmap.createScaledBitmap(heart_2, 192, 64, false);
+
+        heart_3 = BitmapFactory.decodeResource(getResources(), R.drawable.heart_3);
+        heart_3 = Bitmap.createScaledBitmap(heart_3, 288, 64, false);
+
+
         getHolder().addCallback(this);
         gestureDetector = new GestureDetector(context, new GestureListener());
 
@@ -64,21 +76,23 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
         cat1 = new Cat(getWidth(), getHeight(),
-                BitmapFactory.decodeResource(getResources(), R.drawable.cat_sprite),
-                BitmapFactory.decodeResource(getResources(), R.drawable.jump_sprite),
-                BitmapFactory.decodeResource(getResources(), R.drawable.sleep_sprite),
-                BitmapFactory.decodeResource(getResources(), R.drawable.scare_sprite),
-                8, 8, 11, 40, 280, 40,
-                true, true, false, true);
+                BitmapFactory.decodeResource(getResources(), R.drawable.samurai_run_mirror_sprite),
+                BitmapFactory.decodeResource(getResources(), R.drawable.samurai_jump_mirror_sprite),
+                BitmapFactory.decodeResource(getResources(), R.drawable.samurai_idle_mirror_sprite),
+                BitmapFactory.decodeResource(getResources(), R.drawable.samurai_starting_mirror_sprite), 3, 0,
+                8, 12, 6, 6, 40, 280, 40,
+                false, true, false, true);
 
         cat2 = new Cat(getWidth(), getHeight(),
-                BitmapFactory.decodeResource(getResources(), R.drawable.cat_mirror_sprite),
-                BitmapFactory.decodeResource(getResources(), R.drawable.jump_mirror_sprite),
-                BitmapFactory.decodeResource(getResources(), R.drawable.sleep_mirror_sprite),
-                BitmapFactory.decodeResource(getResources(), R.drawable.scare_mirror_sprite),
-                8, 8, 11, 40, 280, 40,
-                false, true, false, false);
-        obstacleManager = new ObstacleManager(getContext(), getHeight(),getWidth());
+                BitmapFactory.decodeResource(getResources(), R.drawable.samurai_run_sprite),
+                BitmapFactory.decodeResource(getResources(), R.drawable.samurai_jump_sprite),
+                BitmapFactory.decodeResource(getResources(), R.drawable.samurai_idle_sprite),
+                BitmapFactory.decodeResource(getResources(), R.drawable.samurai_starting_sprite), 3, 0,
+                8, 12, 6, 6, 40, 280, 30,
+                true, true, false, false);
+        bg_1 = new Background(bg_Image, 0, 0, 15);
+
+        obstacleManager = new ObstacleManager(getContext(), getHeight(), getWidth());
 
         thread.setRunning(true);
         thread.start();
@@ -89,62 +103,84 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         currentTime = System.currentTimeMillis();
         cat1.update(currentTime);
         cat2.update(currentTime);
-    if(!cat1.isGameStart){
-        if (obstacleManager != null) {
-            obstacleManager.update();
+        if (!cat1.isGameStart) {
+            cat1.score += 10;
+            cat2.score += 10;
 
+            if (obstacleManager != null) {
+                obstacleManager.update();
 
-            // Cat1 çarpışma kontrolü ve can azaltma
-            if (obstacleManager.checkCollision(cat1)) {
-                if (currentTime - cat1LastHitTime > INVULNERABILITY_TIME) {
+                // Çarpışmalar
+                boolean cat1Hit = obstacleManager.checkCollision(cat1);
+                boolean cat2Hit = obstacleManager.checkCollision(cat2);
+
+                if (cat1Hit && currentTime - cat1LastHitTime > INVULNERABILITY_TIME) {
                     cat1.catLives++;
                     cat1LastHitTime = currentTime;
-                    if (cat1.catLives <= 0) {
-                        thread.setRunning(false);
-                        // İstersen game over ekranına geçiş veya başka işlemler ekleyebilirsin
-                    }
+                }
+
+                if (cat2Hit && currentTime - cat2LastHitTime > INVULNERABILITY_TIME) {
+                    cat2.catLives++;
+                    cat2LastHitTime = currentTime;
                 }
             }
         }
 
-            // Cat2 çarpışma kontrolü ve can azaltma
-            if (obstacleManager.checkCollision(cat2)) {
-                if (currentTime - cat2LastHitTime > INVULNERABILITY_TIME) {
-                    cat2.catLives++;
-                    cat2LastHitTime = currentTime;
-                    if (cat2.catLives <= 0) {
-                        thread.setRunning(false);
-                        // İstersen game over ekranına geçiş veya başka işlemler ekleyebilirsin
-                    }
-                }
-            }
-        }
+
     }
 
     @Override
     public void draw(Canvas canvas) {
+        Paint paint = new Paint();
         super.draw(canvas);
 
         if (canvas != null) {
-            // 1️⃣ Arka plan resmi en başta çizilmeli
-            canvas.drawBitmap(bgImage, 0, 0, null);
+            //  Arka plan resmi en başta çizilmeli
+            if (cat1.isGameStart) {
+                canvas.drawBitmap(bg_Image, 0, 0, null);
+            } else {
+                bg_1.drawScrollingBackgroundDual(canvas);
+            }
 
-            // 2️⃣ Sonra diğer şeyleri çiz
+
+            // 2 Sonra diğer şeyleri çiz
             cat1.draw(canvas);
             cat2.draw(canvas);
 
             if (obstacleManager != null) {
                 obstacleManager.draw(canvas);
             }
-
+            int heartX = canvas.getWidth() - 350; // Sağdan boşluk
+            int heartY = 30;
             // 3️⃣ Can sayısını ekrana yaz
-            Paint paint = new Paint();
-            paint.setColor(Color.RED);
-            paint.setTextSize(50);
-            paint.setAntiAlias(true);
+            if (cat1.catLives == 3) {
+                canvas.drawBitmap(heart_3, 50, 50, null);
+                canvas.drawText("x " + cat1.catLives, 110, 90, paint);
+            } else if (cat1.catLives == 2) {
+                canvas.drawBitmap(heart_2, 50, 50, null);
+                canvas.drawText("x " + cat1.catLives, 110, 90, paint);
+            } else if (cat1.catLives == 1) {
+                canvas.drawBitmap(heart_1, 50, 50, null);
+                canvas.drawText("x " + cat1.catLives, 110, 90, paint);
+            }
 
-            canvas.drawText("Cat1 Lives: " + cat1.catLives, 50, 100, paint);
-            canvas.drawText("Cat2 Lives: " + cat2.catLives, 50, 170, paint);
+            if (cat2.catLives == 3) {
+                canvas.drawBitmap(heart_3, heartX, heartY, null);
+                canvas.drawText("x " + cat2.catLives, heartX + 50, heartY + 45, paint);
+            } else if (cat2.catLives == 2) {
+                canvas.drawBitmap(heart_2, heartX, heartY, null);
+                canvas.drawText("x " + cat2.catLives, heartX + 50, heartY + 45, paint);
+            } else if (cat2.catLives == 1) {
+                canvas.drawBitmap(heart_1, heartX, heartY, null);
+                canvas.drawText("x " + cat2.catLives, heartX + 50, heartY + 45, paint);
+            }
+            paint.setColor(Color.WHITE);
+            paint.setTextSize(40);
+            canvas.drawText("Score: " + cat1.score, heartX, heartY + 110, paint);
+            paint.setColor(Color.WHITE);
+            paint.setTextSize(40);
+            canvas.drawText("Score: " + cat2.score, 70, heartY + 120, paint);
+
         }
     }
 
@@ -186,10 +222,10 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         public boolean onDoubleTap(MotionEvent e) {
             float x = e.getX();
             int width = getWidth();
-            if(cat1.isGameStart){
+            if (cat1.isGameStart) {
                 cat1.handleDoubleTap();
                 cat2.handleDoubleTap();
-            }else {
+            } else {
                 if (x > width / 2) {
                     // Sağ yarı - cat1 için çift dokunma
                     cat1.handleDoubleTap();

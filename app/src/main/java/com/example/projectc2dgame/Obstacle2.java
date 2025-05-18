@@ -5,17 +5,19 @@ import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
 import android.graphics.Rect;
 
 public class Obstacle2 {
     private Bitmap bitmap;   // Engel resmi
     private int x, y;        // Engel pozisyonu
-    private int speed = -15;  // Engelin hareket hızı (pozitif, sağa doğru hareket için)
+    private int speed = -20;  // Engelin hareket hızı (pozitif, sağa doğru hareket için)
 
     public Obstacle2(Context context, int startY) {
         // Engel görselini yükle ve ölçeklendir
         bitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.obstacle2);
-        bitmap = Bitmap.createScaledBitmap(bitmap, 150, 150, true);
+        bitmap = Bitmap.createScaledBitmap(bitmap, 120, 120, true);
 
         // Engel ekranın ortasından başlar (isteğe göre değiştirilebilir)
         x = (Resources.getSystem().getDisplayMetrics().widthPixels) / 2;
@@ -26,14 +28,13 @@ public class Obstacle2 {
 
     // Engel sağa doğru hareket eder
     public void update() {
-        x -= speed;  // sağa doğru hareket
+        x += speed;  // sağa doğru hareket
     }
 
     // Engeli ekrana çiz
     public void draw(Canvas canvas) {
         canvas.drawBitmap(bitmap, x, y, null);
-    }
-
+        }
     // Engel pozisyonu için getter
     public int getX() {
         return x;
@@ -43,9 +44,9 @@ public class Obstacle2 {
         return bitmap.getWidth();
     }
 
-    // Çarpışma için engelin dikdörtgen alanı
+    // Çarpışma için
     public Rect getRect() {
-        int padding = 20; // Dilersen 40 yapabilirsin, kediyle aynı olsun diye
+        int padding = 10;
         return new Rect(
                 x + padding,
                 y + padding,
@@ -54,7 +55,7 @@ public class Obstacle2 {
         );
     }
 
-    // Kedi ile çarpışma kontrolü yap
+    // Kedi ile çarpışma kontrolü
     public boolean checkCollision(Cat cat) {
         return Rect.intersects(this.getRect(), cat.getRect());
     }

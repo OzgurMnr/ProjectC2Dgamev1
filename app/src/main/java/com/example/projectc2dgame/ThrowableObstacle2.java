@@ -9,11 +9,11 @@ import android.graphics.Rect;
 public class ThrowableObstacle2 {
     private Bitmap bitmap;
     private int x, y;
-    private int speed = -15;
+    private int speed = -20;
 
     public ThrowableObstacle2(Context context, int startX, int startY) {
         bitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.throwable_obstacle2);
-        bitmap = Bitmap.createScaledBitmap(bitmap, 150, 150, true);
+        bitmap = Bitmap.createScaledBitmap(bitmap, 120, 120, true);
 
         this.x = startX;
         this.y = startY;
@@ -28,7 +28,7 @@ public class ThrowableObstacle2 {
     }
 
     public Rect getRect() {
-        int padding = 20;
+        int padding = 10;
         return new Rect(
                 x + padding,
                 y + padding,

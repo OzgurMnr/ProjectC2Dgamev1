@@ -12,7 +12,7 @@ public class ThrowableObstacle {
 
     public ThrowableObstacle(Context context, int startX, int startY) {
         bitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.throwable_obstacle);
-        bitmap = Bitmap.createScaledBitmap(bitmap, 150, 150, true);
+        bitmap = Bitmap.createScaledBitmap(bitmap, 120, 120, true);
 
         this.x = startX;
         this.y = startY;
@@ -34,9 +34,9 @@ public class ThrowableObstacle {
         return bitmap.getWidth();
     }
 
-    // Çarpışma dikdörtgeni
+    // Çarpışma için
     public Rect getRect() {
-        int padding = 20;
+        int padding = 10;
         return new Rect(
                 x + padding,
                 y + padding,

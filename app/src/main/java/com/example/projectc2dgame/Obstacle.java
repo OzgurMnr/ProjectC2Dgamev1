@@ -11,12 +11,12 @@ import android.graphics.Rect;
 public class Obstacle {
     private Bitmap bitmap;   // Engel resmi
     private int x, y;        // Engel pozisyonu
-    private int speed = 15;  // Sağ doğru hareket için pozitif hız
+    private int speed = 20;  // Sağ doğru hareket için pozitif hız
 
     public Obstacle(Context context, int startY) {
         // Engel görselini yükle ve ölçeklendir
         bitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.obstacle);
-        bitmap = Bitmap.createScaledBitmap(bitmap, 150, 150, true);
+        bitmap = Bitmap.createScaledBitmap(bitmap, 120, 120, true);
 
         // Engel ekranın ortasından başlar
         x = (Resources.getSystem().getDisplayMetrics().widthPixels) / 2;
@@ -47,7 +47,7 @@ public class Obstacle {
 
     // Çarpışma için dikdörtgen alan
     public Rect getRect() {
-        int padding = 20;
+        int padding = 10;
         return new Rect(
                 x + padding,
                 y + padding,

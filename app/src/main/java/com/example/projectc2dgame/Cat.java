@@ -2,6 +2,8 @@ package com.example.projectc2dgame;
 
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
 import android.graphics.Rect;
 import android.view.MotionEvent;
 
@@ -33,7 +35,8 @@ public class Cat {
     public int currentRunFrame = 0;
     public int runFrameCount;
     public int jumpFrameCount; // Zıplamaaaaaa akare sayısı (şu an sabit 1 olabilir ama geliştirmeye açık)
-    public int scareFrameCount;
+    public int startingFrameCount;
+    public int idleFrameCount;
     public long lastFrameChangeTime = 0;
     private float touchStartY = 0;
     public int location = 0;
@@ -43,11 +46,12 @@ public class Cat {
     public int scareCount;
 
     public int catLives;
+    public int score;
 
 
     public Cat(int screenWidth, int screenHeight,
                Bitmap runSpriteSheet, Bitmap jumpSpriteSheet, Bitmap sleepSpriteSheet, Bitmap scareSpriteSheet,
-               int runFrameCount, int jumpFrameCount, int scareFrameCount,
+               int catLives,int score,int runFrameCount, int jumpFrameCount, int startingFrameCount,int idleFrameCount,
                int jumpSpeed, int jumpHeight, int frameDelay, boolean isReversed,
                boolean isGameStart, boolean isScare, boolean isRightSide) {
 
@@ -56,11 +60,14 @@ public class Cat {
         this.sleepSpriteSheet = sleepSpriteSheet;
         this.scareSpriteSheet = scareSpriteSheet;
 
+        this.catLives=catLives;
+
         this.runFrameCount = runFrameCount;
         this.jumpFrameCount = jumpFrameCount;
-        this.scareFrameCount = scareFrameCount;
+        this.startingFrameCount = startingFrameCount;
+        this.idleFrameCount=idleFrameCount;
 
-        this.runFrameWidth = runSpriteSheet.getWidth() / runFrameCount;
+        this.runFrameWidth = (runSpriteSheet.getWidth() / 8);
         this.runFrameHeight = runSpriteSheet.getHeight();
 
         this.jumpFrameWidth = jumpSpriteSheet.getWidth() / jumpFrameCount;
@@ -73,11 +80,12 @@ public class Cat {
         this.isReversed = isReversed;
         this.isGameStart = isGameStart;
         this.isScare = isScare;
+        this.score=score;
 
-        int catWidth = runFrameWidth * 3;
-        int catHeight = runFrameHeight * 3;
+        int catWidth = runFrameWidth ;
+        int catHeight = runFrameHeight ;
 
-        this.CatY = (screenHeight / 2) - (catHeight / 2);
+        this.CatY = (screenHeight  - catHeight)/2;
 
         if (isRightSide) {
             this.CatX = screenWidth - catWidth;  // sağda konumlandır
@@ -91,24 +99,24 @@ public class Cat {
         if (isGameStart) {
             if (isReversed) {
                 if (currentTime > lastFrameChangeTime + frameDelay) {
-                    currentRunFrame = (currentRunFrame + 1) % runFrameCount;
+                    currentRunFrame = (currentRunFrame + 1) % idleFrameCount;
                     lastFrameChangeTime = currentTime;
                 }
             } else if (!isReversed) {
                 if (currentTime > lastFrameChangeTime + frameDelay) {
-                    currentRunFrame = (currentRunFrame - 1 + runFrameCount) % runFrameCount;
+                    currentRunFrame = (currentRunFrame - 1 + idleFrameCount) % idleFrameCount;
                     lastFrameChangeTime = currentTime;
                 }
             }
         } else if (isScare) {
             if (isReversed) {
                 if (currentTime > lastFrameChangeTime + 80) {
-                    currentRunFrame = (currentRunFrame + 1) % 11;
+                    currentRunFrame = (currentRunFrame + 1) % startingFrameCount;
                     lastFrameChangeTime = currentTime;
                 }
             } else if (!isReversed) {
-                if (currentTime > lastFrameChangeTime + frameDelay) {
-                    currentRunFrame = (currentRunFrame - 1 + 11) % 11;
+                if (currentTime > lastFrameChangeTime + 80) {
+                    currentRunFrame = (currentRunFrame - 1 + startingFrameCount) % startingFrameCount;
                     lastFrameChangeTime = currentTime;
                 }
             }
@@ -116,18 +124,18 @@ public class Cat {
 
             if (isReversed) {
                 if (currentTime > lastFrameChangeTime + 100) {
-                    currentRunFrame = (currentRunFrame + 1) % 3;
+                    currentRunFrame = (currentRunFrame + 1) % jumpFrameCount;
                     lastFrameChangeTime = currentTime;
                 }
             } else if (!isReversed) {
-                if (currentTime > lastFrameChangeTime + frameDelay) {
-                    currentRunFrame = (currentRunFrame - 1 + runFrameCount) % 3;
+                if (currentTime > lastFrameChangeTime + 100) {
+                    currentRunFrame = (currentRunFrame - 1 + jumpHeight) % jumpFrameCount;
                     lastFrameChangeTime = currentTime;
                 }
             }
         } else {
             if (isReversed) {
-                if (currentTime > lastFrameChangeTime + frameDelay) {
+                if (currentTime > lastFrameChangeTime + 20) {
                     currentRunFrame = (currentRunFrame + 1) % runFrameCount;
                     lastFrameChangeTime = currentTime;
                 }
@@ -166,7 +174,7 @@ public class Cat {
                 location++;
             }
         }
-        // Düşme
+        // Düşmeee
         else if (isFalling) {
             if (jumpProgress < jumpHeight) {
                 CatY += jumpSpeed;
@@ -181,13 +189,15 @@ public class Cat {
 
 
     public void draw(Canvas canvas) {
+
+        Rect src = new Rect(currentRunFrame * runFrameWidth, 0, (currentRunFrame + 1) * runFrameWidth, runFrameHeight);
+        Rect dst = new Rect(CatX, CatY, CatX + runFrameWidth/2, CatY + runFrameHeight/2);
+
+
         if (isGameStart) {
-            Rect src = new Rect(currentRunFrame * runFrameWidth, 0, (currentRunFrame + 1) * runFrameWidth, runFrameHeight);
-            Rect dst = new Rect(CatX, CatY, CatX + runFrameWidth * 3, CatY + runFrameHeight * 3);
+
             canvas.drawBitmap(sleepSpriteSheet, src, dst, null);
         } else if (isScare) {
-            Rect src = new Rect(currentRunFrame * runFrameWidth, 0, (currentRunFrame + 1) * runFrameWidth, runFrameHeight);
-            Rect dst = new Rect(CatX, CatY, CatX + runFrameWidth * 3, CatY + runFrameHeight * 3);
             canvas.drawBitmap(scareSpriteSheet, src, dst, null);
             scareCount++;
             if (scareCount == 8) {
@@ -196,20 +206,21 @@ public class Cat {
 
         } else if (isJumping || isFalling || isJumpingThrough) {
             // Zıplama (tek kare)
-            Rect src = new Rect(currentRunFrame * runFrameWidth, 0, (currentRunFrame + 1) * runFrameWidth, runFrameHeight);
-            Rect dst = new Rect(CatX, CatY, CatX + runFrameWidth * 3, CatY + runFrameHeight * 3);
             canvas.drawBitmap(jumpSpriteSheet, src, dst, null);
         } else if (catLives == 6) {
-            Rect src = new Rect(currentRunFrame * runFrameWidth, 0, (currentRunFrame + 1) * runFrameWidth, runFrameHeight);
-            Rect dst = new Rect(CatX, CatY, CatX + runFrameWidth * 3, CatY + runFrameHeight * 3);
-            canvas.drawBitmap(deathSpriteSheet, src, dst, null);
+
+            canvas.drawBitmap(jumpSpriteSheet, src, dst, null);
 
         } else {
             // Koşma animasyonu
-            Rect src = new Rect(currentRunFrame * runFrameWidth, 0, (currentRunFrame + 1) * runFrameWidth, runFrameHeight);
-            Rect dst = new Rect(CatX, CatY, CatX + runFrameWidth * 3, CatY + runFrameHeight * 3);
+
             canvas.drawBitmap(runSpriteSheet, src, dst, null);
         }
+        Paint red = new Paint();
+        red.setColor(Color.RED);
+        red.setStyle(Paint.Style.STROKE);
+        red.setStrokeWidth(5);
+        canvas.drawRect(getRect(), red);
 
     }
 
@@ -249,21 +260,21 @@ public class Cat {
 
     }
 
-    // Çarpışma için
-    // Draw için dst Rect — 3 kat büyütülmüş hali
-    // Çizim alanı, 3x büyütülmüş
-    Rect dst = new Rect(CatX, CatY, CatX + runFrameWidth * 3, CatY + runFrameHeight * 3);
-
-    // Çarpışma kutusu, frame’den biraz daha küçük
     public Rect getRect() {
-        int padding = 150;  // daha fazla padding ile hitbox küçültülüyor
+        int drawWidth = runFrameWidth ;     // 128 * 3 = 384
+        int drawHeight = runFrameHeight ;   // 128 * 3 = 384
+
+        int paddingX = 60;  // yatayda içeri çek
+        int paddingY = 80;  // dikeyde içeri çek
+
         return new Rect(
-                CatX + padding,
-                CatY + padding,
-                CatX + runFrameWidth * 3 - padding,
-                CatY + runFrameHeight * 3 - padding
+                CatX + paddingX,
+                CatY + paddingY,
+                CatX + runFrameWidth - paddingX,
+                CatY + runFrameHeight - paddingY
         );
     }
 
 
-}
+
+    }
