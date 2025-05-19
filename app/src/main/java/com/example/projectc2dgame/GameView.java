@@ -21,6 +21,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
     private ObstacleManager obstacleManager;
 
+
     private Cat cat1, cat2;
 
     private long currentTime;
@@ -73,22 +74,35 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     }
 
 
+
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
         cat1 = new Cat(getWidth(), getHeight(),
-                BitmapFactory.decodeResource(getResources(), R.drawable.samurai_run_mirror_sprite),
-                BitmapFactory.decodeResource(getResources(), R.drawable.samurai_jump_mirror_sprite),
-                BitmapFactory.decodeResource(getResources(), R.drawable.samurai_idle_mirror_sprite),
-                BitmapFactory.decodeResource(getResources(), R.drawable.samurai_starting_mirror_sprite), 3, 0,
-                8, 12, 6, 6, 40, 280, 40,
+                BitmapFactory.decodeResource(getResources(), R.drawable.shinobi_run_mirror_sprite),
+                BitmapFactory.decodeResource(getResources(), R.drawable.shinobi_jump_mirror_sprite),
+                BitmapFactory.decodeResource(getResources(), R.drawable.shinobi_idle_mirror_sprite),
+                BitmapFactory.decodeResource(getResources(), R.drawable.shinobi_starting_mirror_sprite),
+                BitmapFactory.decodeResource(getResources(), R.drawable.shinobi_attack_mirror_sprite),
+                BitmapFactory.decodeResource(getResources(), R.drawable.shinobi_hurt_mirror_sprite),
+                BitmapFactory.decodeResource(getResources(), R.drawable.shinobi_dead_mirror_sprite),
+                3, 0,
+                8, 12, 6, 6,
+                5,2 ,4,
+                40, 280, 40,
                 false, true, false, true);
 
         cat2 = new Cat(getWidth(), getHeight(),
-                BitmapFactory.decodeResource(getResources(), R.drawable.samurai_run_sprite),
-                BitmapFactory.decodeResource(getResources(), R.drawable.samurai_jump_sprite),
-                BitmapFactory.decodeResource(getResources(), R.drawable.samurai_idle_sprite),
-                BitmapFactory.decodeResource(getResources(), R.drawable.samurai_starting_sprite), 3, 0,
-                8, 12, 6, 6, 40, 280, 30,
+                BitmapFactory.decodeResource(getResources(), R.drawable.shinobi_run_sprite),
+                BitmapFactory.decodeResource(getResources(), R.drawable.shinobi_jump_sprite),
+                BitmapFactory.decodeResource(getResources(), R.drawable.shinobi_idle_sprite),
+                BitmapFactory.decodeResource(getResources(), R.drawable.shinobi_starting_sprite),
+                BitmapFactory.decodeResource(getResources(), R.drawable.shinobi_attack_sprite),
+                BitmapFactory.decodeResource(getResources(), R.drawable.shinobi_hurt_sprite),
+                BitmapFactory.decodeResource(getResources(), R.drawable.shinobi_dead_sprite),
+                3, 0,
+                8, 12, 6,
+                6,5,2,4,
+                40, 280, 30,
                 true, true, false, false);
         bg_1 = new Background(bg_Image, 0, 0, 15);
 
@@ -97,6 +111,8 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         thread.setRunning(true);
         thread.start();
     }
+
+
 
 
     public void update() {
@@ -126,7 +142,6 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
             }
         }
 
-
     }
 
     @Override
@@ -152,7 +167,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
             }
             int heartX = canvas.getWidth() - 350; // Sağdan boşluk
             int heartY = 30;
-            // 3️⃣ Can sayısını ekrana yaz
+            // ⿣ Can sayısını ekrana yaz
             if (cat1.catLives == 3) {
                 canvas.drawBitmap(heart_3, 50, 50, null);
                 canvas.drawText("x " + cat1.catLives, 110, 90, paint);
@@ -180,9 +195,17 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
             paint.setColor(Color.WHITE);
             paint.setTextSize(40);
             canvas.drawText("Score: " + cat2.score, 70, heartY + 120, paint);
+            Paint debugPaint = new Paint();
+            debugPaint.setColor(Color.RED);
+            debugPaint.setStyle(Paint.Style.STROKE);
+            debugPaint.setStrokeWidth(4);
+
+
+
 
         }
     }
+
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
@@ -237,5 +260,29 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
             return true;
         }
+
+        @Override
+        public boolean onSingleTapConfirmed(MotionEvent e) {
+            float x = e.getX();
+            int width = getWidth();
+
+            if (x > width / 2) {
+                cat1.attackCount = 0;
+                cat1.isAttack = true;
+
+                // cat1 önündeki nesneyi cat2'ye at
+                obstacleManager.throwFrontObstacle(cat1, cat2);
+
+            } else {
+                cat2.attackCount = 0;
+                cat2.isAttack = true;
+
+                // cat2 önündeki nesneyi cat1'e at
+                obstacleManager.throwFrontObstacle(cat2, cat1);
+            }
+
+            return true;
+        }
+
     }
 }

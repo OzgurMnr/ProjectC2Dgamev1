@@ -12,7 +12,7 @@ import android.graphics.Rect;
 public class Obstacle2 {
     private Bitmap bitmap;   // Engel resmi
     private int x, y;        // Engel pozisyonu
-    private int speed = -20;  // Engelin hareket hızı (pozitif, sağa doğru hareket için)
+    private int speed = -15;  // Engelin hareket hızı (pozitif, sağa doğru hareket için)
 
     public Obstacle2(Context context, int startY) {
         // Engel görselini yükle ve ölçeklendir
